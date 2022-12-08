@@ -1,5 +1,7 @@
 const searchKit = require("@searchkit/sdk");
 require("cross-fetch/polyfill");
+const util = require('util')
+
 
 // ELASTIC_SEARCH_INDEX = pricesure_v3
 // ELASTIC_SEARCH_URL = https://hklnu053kl:nzh7zulpaj@paid-3-node-9829273760.us-east-1.bonsaisearch.net
@@ -23,39 +25,27 @@ const config = {
         { id: 'price-descending', field: { price: 'desc' } }
     ],
 
-    filters: [
-        new searchKit.TermFilter({
-            identifier: "rating",
-            field: "rating",
-
-        }),
-        new searchKit.Filter({
-            identifier: "vendor",
-            field: "vendor",
-        }),
-    ],
 
     facets: [
-        // new searchKit.MultiQueryOptionsFacet({
-        //     field: 'vendor',
-        //     identifier: 'vendor',
-        //     multipleSelect: true,
-
-        //     options: [
-        //         { value: "EMILY", label: 'EMILY' },
-        //         { value: "Secret Stash", label: 'Secret Stash' },
-        //         { value: "Aquafina", label: 'Aquafina' },
-        //     ]
-        // }),
-
-        new searchKit.RefinementSelectFacet({
-            field: 'domain', identifier: 'domain'
+        
+        new searchKit.MultiQueryOptionsFacet({
+            field: 'domain',
+            identifier: 'domain',
+            multipleSelect: true,
+            label: "domain",
+            options:[
+                { value: "galaxydoreen.com", label: "galaxydoreen.com",  },
+                { value: "laam.pk", label: "laam.pk", },
+                { value: "secretstash.pk", label: "secretstash.pk", },
+            ]
+            
         }),
 
-        new searchKit.HierarchicalMenuFacet({
-            fields: ["vendor1", "vendor2", "vendor3"],
+        new searchKit.RefinementSelectFacet({
+            field: 'vendor',
             identifier: 'vendor',
-            label: 'vendor'
+            label: "vandor",
+            multipleSelect: true,
 
         }),
     ]
@@ -68,23 +58,29 @@ async function requestHandler() {
         .query("")
         .setFilters([
             //Secret Stash  EMILY
-            { identifier: "vendor", value: "EMILY", level: 1 },
-            // { identifier: "vendor", value: "Secret Stash", level: 2 },
-            // { identifier: "rating", min: "4.0", max: "5.0" },
+            // { identifier: "vendor", value: "EMILY" },
+            // { identifier: "vendor", value: "Secret Stash"},
+            // { identifier: "vendor", value: "H&S Collection"},
+            // { identifier: "domain", value: "laam.pk"},
+            // { identifier: "domain", value: "galaxydoreen.com"},
+            // { identifier: "domain", value: "secretstash.pk"},
         ])
         .setSortBy("")  // here to set the sort, specifying the id
         .execute({
             facets: true,
             hits: {
                 from: 0,
-                size: 20,
+                size: 10,
             },
         });
-    console.log(response);
+    // console.log(response);
+    console.log(util.inspect(response,{showHidden: true, depth: null, colors: true}));
+
     // console.log(response.facets[0].entries);
-    response.hits.items.forEach((hit) => {
-        console.log(hit.fields);
-    });
+    // console.log(response.facets);
+    // response.hits.items.forEach((hit) => {
+    //     console.log(hit.fields);
+    // });
     // response.facets[0].entries.forEach((facet) => {
     //     console.log(facet);
     // });

@@ -1,5 +1,6 @@
 const searchKit = require("@searchkit/sdk");
 require("cross-fetch/polyfill");
+const util = require('util')
 
 
 // ELASTIC_SEARCH_INDEX = pricesure_v3
@@ -36,42 +37,50 @@ async function requestHandler(props) {
             { id: 'price-descending', field: { price: 'desc' } }
         ],
 
-        filters: [
-            new searchKit.TermFilter({
-                identifier: "rating",
-                field: "rating",
-            }),
-            new searchKit.TermFilter({
-                identifier: "vendor",
-                field: "vendor",
-            }),
-            new searchKit.TermFilter({
-                identifier: "domain",
-                field: "domain",
-            }),
-            new searchKit.TermFilter({
-                identifier: "category",
-                field: "category",
-            }),
-        ],
+        // filters: [
+        //     new searchKit.TermFilter({
+        //         identifier: "rating",
+        //         field: "rating",
+        //     }),
+        //     new searchKit.TermFilter({
+        //         identifier: "vendor",
+        //         field: "vendor",
+        //     }),
+        //     new searchKit.TermFilter({
+        //         identifier: "domain",
+        //         field: "domain",
+        //     }),
+        //     new searchKit.TermFilter({
+        //         identifier: "category",
+        //         field: "category",
+        //     }),
+        // ],
 
         facets: [
             new searchKit.MultiQueryOptionsFacet({
-                field: 'vendor',
-                identifier: 'vendor',
+                field: 'domain',
+                identifier: 'domain',
                 multipleSelect: true,
-
+                label: "domain",
                 options: [
-                    { value: "EMILY", label: 'EMILY' },
-                    { value: "Secret Stash", label: 'Secret Stash' },
-                    { value: "Aquafina", label: 'Aquafina' },
+                    { value: "galaxydoreen.com", label: "galaxydoreen.com", },
+                    { value: "laam.pk", label: "laam.pk", },
+                    { value: "secretstash.pk", label: "secretstash.pk", },
                 ]
             }),
 
             new searchKit.RefinementSelectFacet({
-                field: 'domain',
-                identifier: 'domain',
-                size: 10
+                field: 'vendor',
+                identifier: 'vendor',
+                label: "vandor",
+                multipleSelect: true,
+            }),
+
+            new searchKit.RefinementSelectFacet({
+                field: 'category',
+                identifier: 'category',
+                label: "category",
+                multipleSelect: true,
             }),
         ]
     };
@@ -79,37 +88,64 @@ async function requestHandler(props) {
 
     let filtersList = [];
 
-    if (vendorFilter) filtersList.push({ identifier: "vendor", value: vendorFilter });
-    if (domainFilter) filtersList.push({ identifier: "domain", value: domainFilter });
-    if (categoryFilter) filtersList.push({ identifier: "category", value: categoryFilter });
+    if (vendorFilter) {
+        vendorFilter.forEach((filterValue) => {
+            filtersList.push({ identifier: "vendor", value: filterValue });
+        })
+    }
+
+    if (domainFilter) {
+        domainFilter.forEach((filterValue) => {
+            filtersList.push({ identifier: "domain", value: filterValue });
+        })
+    }
+
+    if (categoryFilter) {
+        categoryFilter.forEach((filterValue) => {
+            filtersList.push({ identifier: "category", value: filterValue });
+        })
+    }
 
     const request = searchKit.default(config);
     const response = await request
         .query(searchQuery)
-        .setFilters(filtersList)
+        .setFilters(
+            filtersList
+            // [
+            //  Secret Stash  EMILY
+            // { identifier: "vendor", value: "EMILY" },
+            // { identifier: "vendor", value: "Secret Stash" },
+            // { identifier: "vendor", value: "H&S Collection" },
+            // { identifier: "domain", value: "laam.pk" },
+            // { identifier: "domain", value: "galaxydoreen.com" },
+            // { identifier: "category", value: "boys shirts" },
+            // { identifier: "category", value: "clothing" },
+            // { identifier: "category", value: "smartphones" },
+            // { identifier: "category", value: "rici coin" },
+            // ]
+        )
         .setSortBy(sortBy)  // here to set the sort, specifying the id
         .execute({
             facets: true,
             hits: {
                 from: 0,
-                size: 20,
+                size: 30,
             },
         });
 
-    response.hits.items.forEach((hit) => {
-        console.log(hit.fields);
-    });
+    // console.log(util.inspect(filtersList, { showHidden: true, depth: null, colors: true }));
+    console.log(util.inspect(response, { showHidden: true, depth: null, colors: true }));
 }
 
-requestHandler(
-    {
-        // domainFilter: "Sapphireonline.pk",
-        // categoryFilter: "boys shirts",
-        // vendorFilter :"EMILY",
-        // searchQuery: "nokia",
-        // sortBy: ""
-    }
-);
+requestHandler({
+    // domainFilter: "Sapphireonline.pk",
+    // categoryFilter: ["rici coin", "smartphones"],
+    // categoryFilter: ["smartphones"],
+    // vendorFilter: ["EMILY", "H&S Collection"],
+    // vendorFilter: ["OPPO", "VIVO", "TECNO", "REALME"],
+    // searchQuery: "nokia",
+    sortBy: "price-descending"
+});
 
 
 // make hits dynamic
